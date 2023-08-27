@@ -25,7 +25,8 @@ public class Transaction {
 
 	private double amount;
 
-	public Transaction(TypeOfTransaction typeOfTransaction, int sendingBank, int receivingBank, int sendingAccount, int receivingAccount, double amount) {
+	public Transaction(Date time, TypeOfTransaction typeOfTransaction, int sendingBank, int receivingBank, int sendingAccount, int receivingAccount, double amount) {
+		this.time = time;
 		this.typeOfTransaction = typeOfTransaction;
 		this.sendingBank = sendingBank;
 		this.receivingBank = receivingBank;

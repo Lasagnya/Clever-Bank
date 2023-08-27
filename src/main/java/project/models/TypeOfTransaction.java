@@ -1,5 +1,12 @@
 package project.models;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+
+@AllArgsConstructor
+@Getter
 public enum TypeOfTransaction {
-	TRANSFER, WITHDRAWAL, PAYIN
+	TRANSFER ("Перевод"), WITHDRAWAL ("Снятие"), PAYIN ("Пополнение");
+
+	private String title;
 }
