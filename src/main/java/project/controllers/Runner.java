@@ -16,5 +16,6 @@ public class Runner {
 	public static void run() {
 		Transaction transaction = new Transaction(new Date(), TypeOfTransaction.TRANSFER, 1, 2, 2, 3, 100);
 		accountDAO.payIn(transaction);
+//		accountDAO.makeCheck(transaction);
 	}
 }
