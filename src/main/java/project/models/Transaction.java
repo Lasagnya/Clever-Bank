@@ -1,6 +1,7 @@
 package project.models;
 
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.util.Date;
@@ -14,13 +15,22 @@ public class Transaction {
 
 	private TypeOfTransaction typeOfTransaction;
 
-	private Bank sendingBank;
+	private int sendingBank;
 
-	private Bank receivingBank;
+	private int receivingBank;
 
-	private Account sendingAccount;
+	private int sendingAccount;
 
-	private Account receivingAccount;
+	private int receivingAccount;
 
 	private double amount;
+
+	public Transaction(TypeOfTransaction typeOfTransaction, int sendingBank, int receivingBank, int sendingAccount, int receivingAccount, double amount) {
+		this.typeOfTransaction = typeOfTransaction;
+		this.sendingBank = sendingBank;
+		this.receivingBank = receivingBank;
+		this.sendingAccount = sendingAccount;
+		this.receivingAccount = receivingAccount;
+		this.amount = amount;
+	}
 }

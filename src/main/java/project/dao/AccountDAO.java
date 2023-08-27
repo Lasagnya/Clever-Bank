@@ -1,6 +1,7 @@
 package project.dao;
 
 import project.models.Account;
+import project.models.Transaction;
 
 import java.sql.*;
 
@@ -24,11 +25,22 @@ public class AccountDAO {
 		}
 	}
 
-	public void payInTransaction(Account account, double amount) {
+	public void payIn(Transaction transaction) {
 		try {
 			PreparedStatement preparedStatement = connection.prepareStatement("update account set balance=balance+? where id=?");
-			preparedStatement.setDouble(1, amount);
-			preparedStatement.setInt(2, account.getId());
+			preparedStatement.setDouble(1, transaction.getAmount());
+			preparedStatement.setInt(2, transaction.getReceivingAccount());
+			preparedStatement.executeUpdate();
+		} catch (SQLException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	public void withdrawal(Transaction transaction) {
+		try {
+			PreparedStatement preparedStatement = connection.prepareStatement("update account set balance=balance-? where id=?");
+			preparedStatement.setDouble(1, transaction.getAmount());
+			preparedStatement.setInt(2, transaction.getSendingAccount());
 			preparedStatement.executeUpdate();
 		} catch (SQLException e) {
 			throw new RuntimeException(e);

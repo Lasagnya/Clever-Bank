@@ -16,5 +16,5 @@ public class Account {
 
 	private double balance;
 
-	private Bank bank;
+	private int bank;
 }
