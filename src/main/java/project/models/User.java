@@ -10,5 +10,5 @@ public class User {
 
 	private String name;
 
-	private int account;
+	private int bank;
 }

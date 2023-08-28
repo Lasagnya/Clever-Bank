@@ -9,7 +9,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Properties;
 
-public class AccountDAO {
+public class TransactionDAO {
 	private static final String DRIVER;
 	private static final String URL;
 	private static final String USERNAME;

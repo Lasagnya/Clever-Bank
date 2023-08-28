@@ -12,5 +12,5 @@ public class Bank {
 
 	private String name;
 
-	private List<User> users;
+	private List<Integer> users;
 }
