@@ -61,14 +61,12 @@ public class TransactionDAO {
 			preparedStatement1.executeUpdate();
 			makeCheck(transaction);
 		} catch (SQLException e) {
-			if (e.getSQLState().equals("23505"))
-				return;
-			else
+			if (!e.getSQLState().equals("23505"))
 				throw new RuntimeException(e);
 		}
 	}
 
-	public void makeCheck(Transaction transaction) {
+	private void makeCheck(Transaction transaction) {
 		int id;
 		String sendingBankName = "";
 		String receivingBankName = "";
