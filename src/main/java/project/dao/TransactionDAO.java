@@ -3,7 +3,10 @@ package project.dao;
 import project.models.Transaction;
 import project.models.TypeOfTransaction;
 
-import java.io.*;
+import java.io.BufferedWriter;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.sql.*;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -43,29 +46,6 @@ public class TransactionDAO {
 		}
 	}
 
-	public void payIn(Transaction transaction) {
-		try {
-			PreparedStatement preparedStatement = connection.prepareStatement("update account set balance=balance+? where account_id=?");
-			preparedStatement.setDouble(1, transaction.getAmount());
-			preparedStatement.setInt(2, transaction.getReceivingAccount());
-			preparedStatement.executeUpdate();
-			saveTransaction(transaction);
-		} catch (SQLException e) {
-			throw new RuntimeException(e);
-		}
-	}
-
-	public void withdrawal(Transaction transaction) {
-		try {
-			PreparedStatement preparedStatement = connection.prepareStatement("update account set balance=balance-? where account_id=?");
-			preparedStatement.setDouble(1, transaction.getAmount());
-			preparedStatement.setInt(2, transaction.getSendingAccount());
-			preparedStatement.executeUpdate();
-			saveTransaction(transaction);
-		} catch (SQLException e) {
-			throw new RuntimeException(e);
-		}
-	}
 
 	public void saveTransaction(Transaction transaction) {
 		try {
@@ -81,7 +61,10 @@ public class TransactionDAO {
 			preparedStatement1.executeUpdate();
 			makeCheck(transaction);
 		} catch (SQLException e) {
-			throw new RuntimeException(e);
+			if (e.getSQLState().equals("23505"))
+				return;
+			else
+				throw new RuntimeException(e);
 		}
 	}
 
@@ -121,7 +104,9 @@ public class TransactionDAO {
 		}
 		DateFormat dateFormat = new SimpleDateFormat("dd-MM-yyy");
 		DateFormat timeFormat = new SimpleDateFormat("hh:mm:ss");
-		try (BufferedWriter bw = new BufferedWriter(new FileWriter(String.format("check/check%d.txt", id)))) {
+		try {
+			FileWriter fw = new FileWriter(String.format("check/check%d.txt", id));
+			BufferedWriter bw = new BufferedWriter(fw);
 			bw.write(String.format("%40s\n", "").replace(" ", "-"));
 			String title = "Банковский чек";
 			String output = String.format("|%13s%12s|\n", "#", "").replace("#", title);
@@ -137,6 +122,8 @@ public class TransactionDAO {
 				bw.write(String.format("%-20s%21s", "| Счёт отправителя:", String.format("%s |\n", receivingAccountId)));
 			bw.write(String.format("%-20s%21s", "| Сумма:", String.format("%s |\n", transaction.getAmount())));
 			bw.write(String.format("%40s\n", "").replace(" ", "-"));
+			bw.close();
+			fw.close();
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}

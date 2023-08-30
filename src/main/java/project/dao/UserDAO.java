@@ -1,15 +1,13 @@
 package project.dao;
 
-import project.models.Bank;
-
 import java.io.FileReader;
 import java.io.IOException;
-import java.sql.*;
-import java.util.ArrayList;
-import java.util.List;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.util.Properties;
 
-public class BankDAO {
+public class UserDAO {
 	private static final String DRIVER;
 	private static final String URL;
 	private static final String USERNAME;
@@ -43,21 +41,4 @@ public class BankDAO {
 		}
 	}
 
-	public List<Bank> findAll() {
-		List<Bank> banks = new ArrayList<>();
-		try {
-			Statement statement = connection.createStatement();
-			ResultSet resultSet = statement.executeQuery("select * from bank");
-
-			while (resultSet.next()) {
-				Bank bank = new Bank();
-				bank.setId(resultSet.getInt("bank_id"));
-				bank.setName(resultSet.getString("bank_name"));
-				banks.add(bank);
-			}
-		} catch (SQLException e) {
-			throw new RuntimeException(e);
-		}
-		return banks;
-	}
 }
