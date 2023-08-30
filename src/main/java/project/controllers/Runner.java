@@ -32,43 +32,35 @@ public class Runner {
 	public static void run() throws IOException {
 		StreamTokenizer st = new StreamTokenizer(new BufferedReader(new InputStreamReader(System.in)));
 		Scanner scanner = new Scanner(System.in);
-//		Transaction transaction = new Transaction(new Date(), TypeOfTransaction.TRANSFER, 1, 2, 1, 2, 100);
-//		AccountDAO.transfer(transaction);
-//		AccountDAO.payIn(transaction);
-//		accountDAO.makeCheck(transaction);
 
 		System.out.println("Необходимо войти в аккаунт.\n" +
 				"Введите имя пользователя:");
 		String name = scanner.next();
 
-		while (!userDAO.findByName(name).isPresent()) {
-			System.out.println("Такого пользователя не существует. Хотите создать?\n" +
-					"1: создать пользователя\n" +
-					"2: ввести имя ещё раз");
+		while (userDAO.findByName(name).isEmpty()) {
+			System.out.println("""
+					Такого пользователя не существует. Хотите создать?
+					1: создать пользователя
+					2: ввести имя ещё раз""");
 
-			switch (scanner.nextInt()) {
-				case 1:
-					user = new User();
-					user.setName(name);
-					byte[] password;
-					byte[] password2;
-					do {
-						System.out.println("Введите пароль:");
-						password = scanner.next().getBytes(StandardCharsets.UTF_8);
-						System.out.println("Введите пароль ещё раз:");
-						password2 = scanner.next().getBytes(StandardCharsets.UTF_8);
-						if (Arrays.equals(password2, password)) {
-							break;
-						} else System.out.println("Пароли не совпадают, попробуйте ещё раз!");
-					} while (true);
-					Argon2 argon2 = Argon2Factory.create(Argon2Factory.Argon2Types.ARGON2id, 16, 32);
-					String hash = argon2.hash(22, 65536, 1, password);
-					user.setPassword(hash);
-					userDAO.save(user);
-					break;
-
-				default:
-					break;
+			if (scanner.nextInt() == 1) {
+				user = new User();
+				user.setName(name);
+				byte[] password;
+				byte[] password2;
+				do {
+					System.out.println("Введите пароль:");
+					password = scanner.next().getBytes(StandardCharsets.UTF_8);
+					System.out.println("Введите пароль ещё раз:");
+					password2 = scanner.next().getBytes(StandardCharsets.UTF_8);
+					if (Arrays.equals(password2, password)) {
+						break;
+					} else System.out.println("Пароли не совпадают, попробуйте ещё раз!");
+				} while (true);
+				Argon2 argon2 = Argon2Factory.create(Argon2Factory.Argon2Types.ARGON2id, 16, 32);
+				String hash = argon2.hash(22, 65536, 1, password);
+				user.setPassword(hash);
+				userDAO.save(user);
 			}
 
 			System.out.println("Необходимо войти в аккаунт\n" +
@@ -89,11 +81,12 @@ public class Runner {
 		while(true) {
 			System.out.println();
 			System.out.println(
-					"Банковская программа\n" +
-					"1: перевести средства на другой счёт\n" +
-					"3: снять деньги со счёта\n" +
-					"4: положить деньги на счёт\n" +
-					"0: выйти");
+					"""
+							Банковская программа
+							1: перевести средства на другой счёт
+							3: снять деньги со счёта
+							4: положить деньги на счёт
+							0: выйти""");
 
 			switch (scanner.nextInt()) {
 				case 1:
