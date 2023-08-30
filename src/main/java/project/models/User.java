@@ -12,5 +12,5 @@ public class User {
 
 	private String password;
 
-	private int bank;
+	private int bank = 1;
 }
