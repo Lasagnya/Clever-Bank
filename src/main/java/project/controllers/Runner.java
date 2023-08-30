@@ -3,6 +3,7 @@ package project.controllers;
 import project.dao.AccountDAO;
 import project.dao.BankDAO;
 import project.dao.TransactionDAO;
+import project.models.Account;
 import project.models.Bank;
 import project.models.Transaction;
 import project.models.TypeOfTransaction;
@@ -29,6 +30,7 @@ public class Runner {
 //		AccountDAO.transfer(transaction);
 //		AccountDAO.payIn(transaction);
 //		accountDAO.makeCheck(transaction);
+
 		loop:
 		while(true) {
 			System.out.println();
@@ -39,29 +41,45 @@ public class Runner {
 					"4: положить деньги на счёт\n" +
 					"0: выйти");
 			st.nextToken();
+
 			switch ((int) st.nval) {
 				case 1:
 					System.out.println("Выберите банк-получатель");
 					List<Bank> banks = bankDAO.findAll();
-					int i = 1;
 					for (Bank bank : banks)
-						System.out.println(i++ + ": " + bank.getName());
+						System.out.println(bank.getId() + ": " + bank.getName());
 					st.nextToken();
 					int receivingBank = (int) st.nval;
-					System.out.println("Введите номер счёта");
+
+					System.out.println("Введите номер счёта получателя");
 					st.nextToken();
 					int receivingAccount = (int) st.nval;
+					if (accountDAO.thisBank(receivingBank, receivingAccount))
+						continue;
+					else {
+						while (!accountDAO.thisBank(receivingBank, receivingAccount)) {
+							System.out.println("Счёт не найден, попробуйте ещё раз");
+							st.nextToken();
+							receivingAccount = (int) st.nval;
+						}
+					}
+
 					System.out.println("С какого счёта вы хотите перевести деньги?");
 					st.nextToken();
 					int sendingAccount = (int) st.nval;
+					//	тут нужно искать счета пользователя
+
 					System.out.println("Введите сумму, которую хотите перевести");
 					st.nextToken();
 					int amount = (int) st.nval;
+
 					Transaction transaction = new Transaction(new Date(), TypeOfTransaction.TRANSFER, 1, receivingBank, sendingAccount, receivingAccount, amount);
 					accountDAO.transfer(transaction);
 					break;
+
 				case 0:
 					break loop;
+
 				default:
 					break;
 			}
