@@ -1,12 +1,18 @@
 package project.dao;
 
+import de.mkammerer.argon2.Argon2;
+import de.mkammerer.argon2.Argon2Factory;
+import project.functions.SwitchInputMethods;
 import project.models.User;
 
 import java.io.FileReader;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.sql.*;
+import java.util.Arrays;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.Scanner;
 
 public class UserDAO {
 	private static final String DRIVER;
@@ -71,5 +77,59 @@ public class UserDAO {
 		} catch (SQLException e) {
 			throw new RuntimeException(e);
 		}
+	}
+
+	public User authentication() {
+		Scanner scanner = new Scanner(System.in);
+		User user;
+		System.out.println("Необходимо войти в аккаунт.\n" +
+				"Введите имя пользователя:");
+		String name = scanner.next();
+
+		while (findByName(name).isEmpty()) {
+			System.out.println("""
+					Такого пользователя не существует. Хотите создать?
+					1: создать пользователя
+					2: ввести имя ещё раз""");
+
+			if (scanner.nextInt() == 1) {
+				user = new User();
+				user.setName(name);
+				byte[] password;
+				byte[] password2;
+				do {
+					System.out.println("Введите пароль:");
+					password = scanner.next().getBytes(StandardCharsets.UTF_8);
+					System.out.println("Введите пароль ещё раз:");
+					password2 = scanner.next().getBytes(StandardCharsets.UTF_8);
+					if (Arrays.equals(password2, password)) {
+						break;
+					} else System.out.println("Пароли не совпадают, попробуйте ещё раз!");
+				} while (true);
+				Argon2 argon2 = Argon2Factory.create(Argon2Factory.Argon2Types.ARGON2id, 16, 32);
+				String hash = argon2.hash(22, 65536, 1, password);
+				user.setPassword(hash);
+				save(user);
+				argon2.wipeArray(password);
+				argon2.wipeArray(password2);
+			}
+
+			System.out.println("Необходимо войти в аккаунт\n" +
+					"Введите имя пользователя:");
+			name = scanner.next();
+		}
+		user = findByName(name).get();
+
+		System.out.println("Введите пароль:");
+		byte[] password = scanner.next().getBytes(StandardCharsets.UTF_8);
+		Argon2 argon2 = Argon2Factory.create(Argon2Factory.Argon2Types.ARGON2id, 16, 32);
+		while (!argon2.verify(user.getPassword(), password)) {
+			System.out.println("Неверный пароль, попробуйте ещё раз!");
+			password = scanner.next().getBytes(StandardCharsets.UTF_8);
+		}
+		argon2.wipeArray(password);
+		SwitchInputMethods.defineUser(user);
+
+		return user;
 	}
 }

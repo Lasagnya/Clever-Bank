@@ -6,6 +6,7 @@ import project.dao.AccountDAO;
 import project.dao.BankDAO;
 import project.dao.TransactionDAO;
 import project.dao.UserDAO;
+import project.functions.SwitchInputMethods;
 import project.models.*;
 
 import java.io.BufferedReader;
@@ -23,59 +24,17 @@ public class Runner {
 	private static final BankDAO bankDAO = new BankDAO();
 	private static final TransactionDAO transactionDAO = new TransactionDAO();
 	private static final UserDAO userDAO = new UserDAO();
-	private static User user;
+//	private static User user;
+	private static final SwitchInputMethods sim = new SwitchInputMethods();
 
-	public static void main(String[] args) throws IOException {
+	public static void main(String[] args) {
 		run();
 	}
 
-	public static void run() throws IOException {
-		StreamTokenizer st = new StreamTokenizer(new BufferedReader(new InputStreamReader(System.in)));
+	public static void run(){
 		Scanner scanner = new Scanner(System.in);
 
-		System.out.println("Необходимо войти в аккаунт.\n" +
-				"Введите имя пользователя:");
-		String name = scanner.next();
-
-		while (userDAO.findByName(name).isEmpty()) {
-			System.out.println("""
-					Такого пользователя не существует. Хотите создать?
-					1: создать пользователя
-					2: ввести имя ещё раз""");
-
-			if (scanner.nextInt() == 1) {
-				user = new User();
-				user.setName(name);
-				byte[] password;
-				byte[] password2;
-				do {
-					System.out.println("Введите пароль:");
-					password = scanner.next().getBytes(StandardCharsets.UTF_8);
-					System.out.println("Введите пароль ещё раз:");
-					password2 = scanner.next().getBytes(StandardCharsets.UTF_8);
-					if (Arrays.equals(password2, password)) {
-						break;
-					} else System.out.println("Пароли не совпадают, попробуйте ещё раз!");
-				} while (true);
-				Argon2 argon2 = Argon2Factory.create(Argon2Factory.Argon2Types.ARGON2id, 16, 32);
-				String hash = argon2.hash(22, 65536, 1, password);
-				user.setPassword(hash);
-				userDAO.save(user);
-			}
-
-			System.out.println("Необходимо войти в аккаунт\n" +
-					"Введите имя пользователя:");
-			name = scanner.next();
-		}
-		user = userDAO.findByName(name).get();
-
-		System.out.println("Введите пароль:");
-		byte[] password = scanner.next().getBytes(StandardCharsets.UTF_8);
-		Argon2 argon2 = Argon2Factory.create(Argon2Factory.Argon2Types.ARGON2id, 16, 32);
-		while (!argon2.verify(user.getPassword(), password)) {
-			System.out.println("Неверный пароль, попробуйте ещё раз!");
-			password = scanner.next().getBytes(StandardCharsets.UTF_8);
-		}
+		userDAO.authentication();
 
 		loop:
 		while(true) {
@@ -84,48 +43,49 @@ public class Runner {
 					"""
 							Банковская программа
 							1: перевести средства на другой счёт
-							3: снять деньги со счёта
-							4: положить деньги на счёт
+							2: снять деньги со счёта
+							3: положить деньги на счёт
 							0: выйти""");
 
 			switch (scanner.nextInt()) {
-				case 1:
+				case 1: {
 					System.out.println("Выберите банк-получатель:");
-					List<Bank> banks = bankDAO.findAll();
-					for (Bank bank : banks)
-						System.out.println(bank.getId() + ": " + bank.getName());
-					int receivingBank = scanner.nextInt();
-
+					int receivingBank = sim.getReceivingBank();
 					System.out.println("Введите номер счёта получателя:");
-					int receivingAccount = scanner.nextInt();
-					while (!accountDAO.thisBank(receivingBank, receivingAccount)) {
-						System.out.println("Счёт не найден, попробуйте ещё раз.");
-						receivingAccount = scanner.nextInt();
-					}
-
+					int receivingAccount = sim.getReceivingAccount(receivingBank);
 					System.out.println("С какого счёта вы хотите перевести деньги?");
-					List<Account> accounts = accountDAO.findByUser(user.getId());
-					for (Account account : accounts)
-						System.out.println("Номер счёта: " + account.getId() +
-								", " + account.getBalance() + " " + account.getCurrency().toString());
-					st.nextToken();
-					while (accounts.stream().noneMatch(account -> account.getId() == (int) st.nval)) {
-						System.out.println("Счёт с таким номером не найден, попробуйте ещё раз.");
-						st.nextToken();
-					}
-					int sendingAccount = (int) st.nval;
-
+					int sendingAccount = sim.getSendingAccount();
 					System.out.println("Введите сумму, которую хотите перевести:");
-					double amount = scanner.nextDouble();
-					double balance = accounts.stream().filter(account -> account.getId() == sendingAccount).findAny().get().getBalance();
-					while (amount > balance) {
-						System.out.println("Недостаточно средств! Введите другую сумму.");
-						amount = scanner.nextDouble();
-					}
+					double amount = sim.getAmount(sendingAccount);
 
 					Transaction transaction = new Transaction(new Date(), TypeOfTransaction.TRANSFER, 1, receivingBank, sendingAccount, receivingAccount, amount);
 					accountDAO.transfer(transaction);
 					break;
+				}
+
+				case 2: {
+					System.out.println("С какого счёта вы хотите снять деньги?");
+					int sendingAccount = sim.getSendingAccount();
+					System.out.println("Введите сумму, которую хотите снять:");
+					double amount = sim.getAmount(sendingAccount);
+
+					Transaction transaction = new Transaction(new Date(), TypeOfTransaction.TRANSFER, 1, 1, sendingAccount, sendingAccount, amount);
+					accountDAO.withdrawal(transaction);
+					break;
+				}
+
+				case 3: {
+					System.out.println("Выберите банк-получатель:");
+					int receivingBank = sim.getReceivingBank();
+					System.out.println("Введите номер счёта получателя:");
+					int receivingAccount = sim.getReceivingAccount(receivingBank);
+					System.out.println("Введите сумму, которую хотите перевести:");
+					double amount = scanner.nextDouble();
+
+					Transaction transaction = new Transaction(new Date(), TypeOfTransaction.TRANSFER, 1, receivingBank, 1, receivingAccount, amount);
+					accountDAO.transfer(transaction);
+					break;
+				}
 
 				case 0:
 					break loop;
