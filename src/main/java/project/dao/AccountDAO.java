@@ -3,11 +3,18 @@ package project.dao;
 import project.models.Account;
 import project.models.Currency;
 import project.models.Transaction;
+import project.models.TypeOfTransaction;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.sql.*;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.Properties;
 
 public class AccountDAO {
@@ -74,6 +81,27 @@ public class AccountDAO {
 		withdrawal(transaction);
 	}
 
+	public Optional<Account> findById(int id) {
+		Account account = new Account();
+		try {
+			PreparedStatement preparedStatement = connection.prepareStatement("select * from account where account_id=?");
+			preparedStatement.setInt(1, id);
+			ResultSet rs = preparedStatement.executeQuery();
+			if (rs.next()) {
+				account.setId(rs.getInt("account_id"));
+				account.setCurrency(Currency.valueOf(rs.getString("currency")));
+				account.setOpening(rs.getDate("opening"));
+				account.setBalance(rs.getDouble("balance"));
+				account.setBank(rs.getInt("account_bank_id"));
+				account.setUser(rs.getInt("account_user_id"));
+				return Optional.of(account);
+			}
+			else return Optional.empty();
+		} catch (SQLException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
 	public List<Account> findByBank(int id) {
 		try {
 			PreparedStatement preparedStatement = connection.prepareStatement("select * from account where account_bank_id=?");
@@ -103,6 +131,59 @@ public class AccountDAO {
 			ResultSet rs = preparedStatement.executeQuery();
 			return makeList(rs);
 		} catch (SQLException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	public void excerpt(Account account) {
+		List<Transaction> transactions = new ArrayList<>();
+		try {
+			PreparedStatement preparedStatement = connection.prepareStatement("select * from transaction" +
+					" where " +
+					"(sending_bank=1 and sending_account=?)" +
+					" or " +
+					"(receiving_bank=1 and receiving_account=?)");
+			preparedStatement.setInt(1, account.getId());
+			preparedStatement.setInt(2, account.getId());
+			ResultSet rs = preparedStatement.executeQuery();
+			while (rs.next()) {
+				Transaction transaction = new Transaction();
+				transaction.setId(rs.getInt("transaction_id"));
+				transaction.setTime(rs.getTimestamp("execution_time"));
+				transaction.setTypeOfTransaction(TypeOfTransaction.valueOf(rs.getString("type_of_transaction")));
+				transaction.setSendingBank(rs.getInt("sending_bank"));
+				transaction.setReceivingBank(rs.getInt("receiving_bank"));
+				transaction.setSendingAccount(rs.getInt("sending_account"));
+				transaction.setReceivingAccount(rs.getInt("receiving_account"));
+				transaction.setAmount(rs.getDouble("amount"));
+				transactions.add(transaction);
+			}
+		} catch (SQLException e) {
+			throw new RuntimeException(e);
+		}
+
+		try {
+			Files.createDirectories(Path.of("excerpt"));
+			FileWriter fw = new FileWriter(String.format("excerpt/excerpt%d.txt", account.getId()));
+			BufferedWriter bw = new BufferedWriter(fw);
+			bw.write(String.format("%66s\n", "").replace(" ", "-"));
+			String title = "Выписка";
+			String output = String.format("%30s%30s\n", "#", "").replace("#", title);
+			bw.write(output);
+			output = String.format("%28s%28s\n", "#", "").replace("#", "Clever-Bank");
+			bw.write(output);
+			bw.write(String.format(" %-26s| %-37s\n", "Клиент", UserDAO.getUser().getName()));
+			bw.write(String.format(" %-26s| %-37s\n", "Счёт", account.getId()));
+			bw.write(String.format(" %-26s| %-37s\n", "Валюта", account.getCurrency().toString()));
+			DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyy");
+			DateFormat timeFormat = new SimpleDateFormat("dd.MM.yyy, HH:mm");
+			bw.write(String.format(" %-26s| %-37s\n", "Дата открытия", dateFormat.format(account.getOpening().getTime())));
+			bw.write(String.format(" %-26s| %-37s\n", "Период", account.getOpening()));
+			bw.write(String.format(" %-26s| %-37s\n", "Дата и время формирования", timeFormat.format(new Date().getTime())));
+			bw.write(String.format(" %-26s| %-37s\n", "Остаток", account.getBalance()));
+			bw.close();
+			fw.close();
+		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
 	}
