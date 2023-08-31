@@ -31,6 +31,7 @@ public class Runner {
 							1: перевести средства на другой счёт
 							2: снять деньги со счёта
 							3: положить деньги на счёт
+							4: сформировать выписку по счёту
 							0: выйти""");
 
 			switch (scanner.nextInt()) {
@@ -40,22 +41,22 @@ public class Runner {
 					System.out.println("Введите номер счёта получателя:");
 					int receivingAccount = sim.getReceivingAccount(receivingBank);
 					System.out.println("С какого счёта вы хотите перевести деньги?");
-					int sendingAccount = sim.getSendingAccount();
+					Account sendingAccount = sim.getSendingAccount();
 					System.out.println("Введите сумму, которую хотите перевести:");
 					double amount = sim.getAmount(sendingAccount);
 
-					Transaction transaction = new Transaction(new Date(), TypeOfTransaction.TRANSFER, 1, receivingBank, sendingAccount, receivingAccount, amount);
+					Transaction transaction = new Transaction(new Date(), TypeOfTransaction.TRANSFER, 1, receivingBank, sendingAccount.getId(), receivingAccount, amount, Currency.BYN);
 					accountDAO.transfer(transaction);
 					break;
 				}
 
 				case 2: {
 					System.out.println("С какого счёта вы хотите снять деньги?");
-					int sendingAccount = sim.getSendingAccount();
+					Account sendingAccount = sim.getSendingAccount();
 					System.out.println("Введите сумму, которую хотите снять:");
 					double amount = sim.getAmount(sendingAccount);
 
-					Transaction transaction = new Transaction(new Date(), TypeOfTransaction.WITHDRAWAL, 1, 1, sendingAccount, sendingAccount, amount);
+					Transaction transaction = new Transaction(new Date(), TypeOfTransaction.WITHDRAWAL, 1, 1, sendingAccount.getId(), sendingAccount.getId(), amount, Currency.BYN);
 					accountDAO.withdrawal(transaction);
 					break;
 				}
@@ -68,8 +69,20 @@ public class Runner {
 					System.out.println("Введите сумму, которую хотите перевести:");
 					double amount = scanner.nextDouble();
 
-					Transaction transaction = new Transaction(new Date(), TypeOfTransaction.PAYIN, 1, receivingBank, 1, receivingAccount, amount);
+					Transaction transaction = new Transaction(new Date(), TypeOfTransaction.PAYIN, 1, receivingBank, 1, receivingAccount, amount, Currency.BYN);
 					accountDAO.transfer(transaction);
+					break;
+				}
+
+				case 4: {
+					System.out.println("По какому счёту хотите сформировать выписку?");
+					Account account = sim.getSendingAccount();
+					System.out.println("""
+								За какой период формировать выписку?
+								1: за месяц
+								2: за год
+								3: за всё время""");
+					accountDAO.excerpt(account, scanner.nextInt());	// add validator
 					break;
 				}
 

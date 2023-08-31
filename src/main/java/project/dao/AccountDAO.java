@@ -11,6 +11,8 @@ import java.nio.file.Path;
 import java.sql.*;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -184,7 +186,16 @@ public class AccountDAO {
 			DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyy");
 			DateFormat timeFormat = new SimpleDateFormat("dd.MM.yyy, HH:mm");
 			bw.write(String.format(" %-26s| %-37s\n", "Дата открытия", dateFormat.format(account.getOpening().getTime())));
-			bw.write(String.format(" %-26s| %-37s\n", "Период выписки", account.getOpening()));
+			if (period == 1) {
+				Date startDate = Date.from(LocalDate.now().minusMonths(1).atStartOfDay(ZoneId.systemDefault()).toInstant());
+				bw.write(String.format(" %-26s| %-37s\n", "Период выписки", dateFormat.format(startDate) + " - " + dateFormat.format(new Date())));
+			}
+			if (period == 2) {
+				Date startDate = Date.from(LocalDate.now().minusYears(1).atStartOfDay(ZoneId.systemDefault()).toInstant());
+				bw.write(String.format(" %-26s| %-37s\n", "Период выписки", dateFormat.format(startDate) + " - " + dateFormat.format(new Date())));
+			}
+			if (period == 3)
+				bw.write(String.format(" %-26s| %-37s\n", "Период выписки", "За всё время"));
 			bw.write(String.format(" %-26s| %-37s\n", "Дата и время формирования", timeFormat.format(new Date().getTime())));
 			bw.write(String.format(" %-26s| %-37s\n", "Остаток", account.getBalance()));
 			bw.write(String.format(" %-12s| %-33s | %-15s\n", "   Дата", "           Примечание", "    Сумма"));

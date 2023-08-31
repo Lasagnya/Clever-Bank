@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.StreamTokenizer;
 import java.util.List;
+import java.util.Optional;
 import java.util.Scanner;
 
 public class SwitchInputMethods {
@@ -34,7 +35,7 @@ public class SwitchInputMethods {
 		return receivingAccount;
 	}
 
-	public int getSendingAccount() {
+	public Account getSendingAccount() {
 		StreamTokenizer st = new StreamTokenizer(new BufferedReader(new InputStreamReader(System.in)));
 		List<Account> accounts = accountDAO.findByUser(UserDAO.getUser().getId());
 		for (Account account : accounts)
@@ -42,20 +43,21 @@ public class SwitchInputMethods {
 					", " + account.getBalance() + " " + account.getCurrency().toString());
 		try {
 			st.nextToken();
-			while (accounts.stream().noneMatch(account -> account.getId() == (int) st.nval)) {
+			Optional<Account> account = accounts.stream().filter(e -> e.getId() == (int) st.nval).findAny();
+			while (account.isEmpty()) {
 				System.out.println("Счёт с таким номером не найден, попробуйте ещё раз.");
 				st.nextToken();
+				account = accounts.stream().filter(e -> e.getId() == (int) st.nval).findAny();
 			}
-			return (int) st.nval;
+			return account.get();
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
 	}
 
-	public double getAmount(int sendingAccount) {
-		List<Account> accounts = accountDAO.findByUser(UserDAO.getUser().getId());
+	public double getAmount(Account sendingAccount) {
 		double amount = scanner.nextDouble();
-		double balance = accounts.stream().filter(account -> account.getId() == sendingAccount).findAny().get().getBalance();
+		double balance = sendingAccount.getBalance();
 		while (amount > balance) {
 			System.out.println("Недостаточно средств! Введите другую сумму.");
 			amount = scanner.nextDouble();
