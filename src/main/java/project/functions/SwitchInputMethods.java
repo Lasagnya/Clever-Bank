@@ -2,11 +2,9 @@ package project.functions;
 
 import project.dao.AccountDAO;
 import project.dao.BankDAO;
-import project.dao.TransactionDAO;
 import project.dao.UserDAO;
 import project.models.Account;
 import project.models.Bank;
-import project.models.User;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -18,12 +16,7 @@ import java.util.Scanner;
 public class SwitchInputMethods {
 	private static final AccountDAO accountDAO = new AccountDAO();
 	private static final BankDAO bankDAO = new BankDAO();
-	private static User user;
 	Scanner scanner = new Scanner(System.in);
-
-	public static void defineUser(User user) {
-		SwitchInputMethods.user = user;
-	}
 
 	public int getReceivingBank() {
 		List<Bank> banks = bankDAO.findAll();
@@ -43,7 +36,7 @@ public class SwitchInputMethods {
 
 	public int getSendingAccount() {
 		StreamTokenizer st = new StreamTokenizer(new BufferedReader(new InputStreamReader(System.in)));
-		List<Account> accounts = accountDAO.findByUser(user.getId());
+		List<Account> accounts = accountDAO.findByUser(UserDAO.getUser().getId());
 		for (Account account : accounts)
 			System.out.println("Номер счёта: " + account.getId() +
 					", " + account.getBalance() + " " + account.getCurrency().toString());
@@ -60,7 +53,7 @@ public class SwitchInputMethods {
 	}
 
 	public double getAmount(int sendingAccount) {
-		List<Account> accounts = accountDAO.findByUser(user.getId());
+		List<Account> accounts = accountDAO.findByUser(UserDAO.getUser().getId());
 		double amount = scanner.nextDouble();
 		double balance = accounts.stream().filter(account -> account.getId() == sendingAccount).findAny().get().getBalance();
 		while (amount > balance) {

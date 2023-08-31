@@ -2,7 +2,7 @@ package project.dao;
 
 import de.mkammerer.argon2.Argon2;
 import de.mkammerer.argon2.Argon2Factory;
-import project.functions.SwitchInputMethods;
+import lombok.Getter;
 import project.models.User;
 
 import java.io.FileReader;
@@ -21,6 +21,8 @@ public class UserDAO {
 	private static final String PASSWORD;
 	private static final Connection connection;
 	private static final Properties properties;
+	@Getter
+	private static User user;
 
 	static {
 		try {
@@ -46,6 +48,10 @@ public class UserDAO {
 		} catch (SQLException e) {
 			throw new RuntimeException(e);
 		}
+	}
+
+	public static void defineUser(User user) {
+		UserDAO.user = user;
 	}
 
 	public Optional<User> findByName(String name) {
@@ -79,7 +85,7 @@ public class UserDAO {
 		}
 	}
 
-	public User authentication() {
+	public void authentication() {
 		Scanner scanner = new Scanner(System.in);
 		User user;
 		System.out.println("Необходимо войти в аккаунт.\n" +
@@ -128,8 +134,6 @@ public class UserDAO {
 			password = scanner.next().getBytes(StandardCharsets.UTF_8);
 		}
 		argon2.wipeArray(password);
-		SwitchInputMethods.defineUser(user);
-
-		return user;
+		defineUser(user);
 	}
 }

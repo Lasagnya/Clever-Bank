@@ -1,30 +1,16 @@
 package project.controllers;
 
-import de.mkammerer.argon2.Argon2;
-import de.mkammerer.argon2.Argon2Factory;
 import project.dao.AccountDAO;
-import project.dao.BankDAO;
-import project.dao.TransactionDAO;
 import project.dao.UserDAO;
 import project.functions.SwitchInputMethods;
 import project.models.*;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.StreamTokenizer;
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.Date;
-import java.util.List;
 import java.util.Scanner;
 
 public class Runner {
 	private static final AccountDAO accountDAO = new AccountDAO();
-	private static final BankDAO bankDAO = new BankDAO();
-	private static final TransactionDAO transactionDAO = new TransactionDAO();
 	private static final UserDAO userDAO = new UserDAO();
-//	private static User user;
 	private static final SwitchInputMethods sim = new SwitchInputMethods();
 
 	public static void main(String[] args) {
