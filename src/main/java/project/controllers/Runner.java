@@ -55,7 +55,7 @@ public class Runner {
 					System.out.println("Введите сумму, которую хотите снять:");
 					double amount = sim.getAmount(sendingAccount);
 
-					Transaction transaction = new Transaction(new Date(), TypeOfTransaction.TRANSFER, 1, 1, sendingAccount, sendingAccount, amount);
+					Transaction transaction = new Transaction(new Date(), TypeOfTransaction.WITHDRAWAL, 1, 1, sendingAccount, sendingAccount, amount);
 					accountDAO.withdrawal(transaction);
 					break;
 				}
@@ -68,7 +68,7 @@ public class Runner {
 					System.out.println("Введите сумму, которую хотите перевести:");
 					double amount = scanner.nextDouble();
 
-					Transaction transaction = new Transaction(new Date(), TypeOfTransaction.TRANSFER, 1, receivingBank, 1, receivingAccount, amount);
+					Transaction transaction = new Transaction(new Date(), TypeOfTransaction.PAYIN, 1, receivingBank, 1, receivingAccount, amount);
 					accountDAO.transfer(transaction);
 					break;
 				}
