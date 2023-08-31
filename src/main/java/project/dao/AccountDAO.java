@@ -135,16 +135,22 @@ public class AccountDAO {
 		}
 	}
 
-	public void excerpt(Account account) {
+	public void excerpt(Account account, int period) {		// 1 - месяц, 2 - год, 3 - весь период
 		List<Transaction> transactions = new ArrayList<>();
 		try {
-			PreparedStatement preparedStatement = connection.prepareStatement("select * from transaction" +
+			String SQL = "select * from transaction" +
 					" where " +
-					"(sending_bank=1 and sending_account=?)" +
+					"((sending_bank=1 and sending_account=?)" +
 					" or " +
-					"(receiving_bank=1 and receiving_account=?)");
+					"(receiving_bank=1 and receiving_account=?))";
+			if (period == 1)
+				SQL = SQL + " and execution_time>now()-'1 month'::interval";
+			else if (period == 2)
+				SQL = SQL + " and execution_time>now()-'1 year'::interval";
+			PreparedStatement preparedStatement = connection.prepareStatement(SQL);
 			preparedStatement.setInt(1, account.getId());
 			preparedStatement.setInt(2, account.getId());
+
 			ResultSet rs = preparedStatement.executeQuery();
 			while (rs.next()) {
 				Transaction transaction = new Transaction();
@@ -156,6 +162,7 @@ public class AccountDAO {
 				transaction.setSendingAccount(rs.getInt("sending_account"));
 				transaction.setReceivingAccount(rs.getInt("receiving_account"));
 				transaction.setAmount(rs.getDouble("amount"));
+				transaction.setCurrency(Currency.valueOf(rs.getString("transaction_currency")));
 				transactions.add(transaction);
 			}
 		} catch (SQLException e) {
@@ -166,7 +173,6 @@ public class AccountDAO {
 			Files.createDirectories(Path.of("excerpt"));
 			FileWriter fw = new FileWriter(String.format("excerpt/excerpt%d.txt", account.getId()));
 			BufferedWriter bw = new BufferedWriter(fw);
-			bw.write(String.format("%66s\n", "").replace(" ", "-"));
 			String title = "Выписка";
 			String output = String.format("%30s%30s\n", "#", "").replace("#", title);
 			bw.write(output);
@@ -178,9 +184,23 @@ public class AccountDAO {
 			DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyy");
 			DateFormat timeFormat = new SimpleDateFormat("dd.MM.yyy, HH:mm");
 			bw.write(String.format(" %-26s| %-37s\n", "Дата открытия", dateFormat.format(account.getOpening().getTime())));
-			bw.write(String.format(" %-26s| %-37s\n", "Период", account.getOpening()));
+			bw.write(String.format(" %-26s| %-37s\n", "Период выписки", account.getOpening()));
 			bw.write(String.format(" %-26s| %-37s\n", "Дата и время формирования", timeFormat.format(new Date().getTime())));
 			bw.write(String.format(" %-26s| %-37s\n", "Остаток", account.getBalance()));
+			bw.write(String.format(" %-12s| %-33s | %-15s\n", "   Дата", "           Примечание", "    Сумма"));
+			bw.write(String.format("%66s\n", "").replace(" ", "-"));
+			for (Transaction transaction : transactions) {
+				String amount = transaction.getAmount() + " " + transaction.getCurrency().toString();
+				if (transaction.getTypeOfTransaction().equals(TypeOfTransaction.WITHDRAWAL) ||
+						(transaction.getTypeOfTransaction().equals(TypeOfTransaction.TRANSFER) &&
+								(transaction.getReceivingAccount() != account.getId() || transaction.getReceivingBank() != account.getBank()))) {
+					amount = "-" + amount;
+				}
+				bw.write(String.format(" %-12s| %-33s | %-15s\n",
+						dateFormat.format(transaction.getTime().getTime()),
+						transaction.getTypeOfTransaction().getTitle(),
+						amount));
+			}
 			bw.close();
 			fw.close();
 		} catch (IOException e) {
