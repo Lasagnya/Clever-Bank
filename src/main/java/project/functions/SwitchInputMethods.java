@@ -82,4 +82,13 @@ public class SwitchInputMethods {
 			}
 		}
 	}
+
+	public int getFileFormat() {
+		int file = scanner.nextInt();
+		while ((file != 1) && (file != 2)) {
+			System.out.println("Введено неверное значение, попробуйте ещё раз.");
+			file = scanner.nextInt();
+		}
+		return file;
+	}
 }

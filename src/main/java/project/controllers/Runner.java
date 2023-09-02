@@ -83,7 +83,15 @@ public class Runner {
 								2: за год
 								3: за всё время""");
 					Period period = sim.getPeriod();
-					accountDAO.excerpt(account, period);
+					System.out.println("""
+								Вывести в txt или pdf?
+								1: txt
+								2: pdf""");
+					int file = sim.getFileFormat();
+					if (file == 1)
+						accountDAO.excerpt(account, period);
+					else if (file == 2)
+						accountDAO.excerptInPDF(account, period);
 					break;
 				}
 
