@@ -8,5 +8,5 @@ import lombok.Getter;
 public enum TypeOfTransaction {
 	TRANSFER ("Перевод"), WITHDRAWAL ("Снятие"), PAYIN ("Пополнение");
 
-	private String title;
+	private final String title;
 }

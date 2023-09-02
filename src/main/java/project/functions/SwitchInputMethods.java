@@ -5,6 +5,7 @@ import project.dao.BankDAO;
 import project.dao.UserDAO;
 import project.models.Account;
 import project.models.Bank;
+import project.models.Period;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -63,5 +64,22 @@ public class SwitchInputMethods {
 			amount = scanner.nextDouble();
 		}
 		return amount;
+	}
+
+	public Period getPeriod() {
+		int value = scanner.nextInt();
+		while(true) {
+			switch (value) {
+				case 1:
+					return Period.MONTH;
+				case 2:
+					return Period.YEAR;
+				case 3:
+					return Period.ALL;
+				default:
+					System.out.println("Введено неверное значение, попробуйте ещё раз.");
+					value = scanner.nextInt();
+			}
+		}
 	}
 }

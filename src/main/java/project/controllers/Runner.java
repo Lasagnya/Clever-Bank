@@ -82,7 +82,8 @@ public class Runner {
 								1: за месяц
 								2: за год
 								3: за всё время""");
-					accountDAO.excerpt(account, scanner.nextInt());	// add validator
+					Period period = sim.getPeriod();
+					accountDAO.excerpt(account, period);
 					break;
 				}
 

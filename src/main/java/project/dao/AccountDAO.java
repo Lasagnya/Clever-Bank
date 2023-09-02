@@ -1,9 +1,6 @@
 package project.dao;
 
-import project.models.Account;
-import project.models.Currency;
-import project.models.Transaction;
-import project.models.TypeOfTransaction;
+import project.models.*;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -137,7 +134,7 @@ public class AccountDAO {
 		}
 	}
 
-	public void excerpt(Account account, int period) {		// 1 - месяц, 2 - год, 3 - весь период
+	public void excerpt(Account account, Period period) {		// 1 - месяц, 2 - год, 3 - весь период
 		List<Transaction> transactions = new ArrayList<>();
 		try {
 			String SQL = "select * from transaction" +
@@ -145,9 +142,9 @@ public class AccountDAO {
 					"((sending_bank=1 and sending_account=?)" +
 					" or " +
 					"(receiving_bank=1 and receiving_account=?))";
-			if (period == 1)
+			if (period == Period.MONTH)
 				SQL = SQL + " and execution_time>now()-'1 month'::interval";
-			else if (period == 2)
+			else if (period == Period.YEAR)
 				SQL = SQL + " and execution_time>now()-'1 year'::interval";
 			PreparedStatement preparedStatement = connection.prepareStatement(SQL);
 			preparedStatement.setInt(1, account.getId());
@@ -186,15 +183,15 @@ public class AccountDAO {
 			DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyy");
 			DateFormat timeFormat = new SimpleDateFormat("dd.MM.yyy, HH:mm");
 			bw.write(String.format(" %-26s| %-37s\n", "Дата открытия", dateFormat.format(account.getOpening().getTime())));
-			if (period == 1) {
+			if (period == Period.MONTH) {
 				Date startDate = Date.from(LocalDate.now().minusMonths(1).atStartOfDay(ZoneId.systemDefault()).toInstant());
 				bw.write(String.format(" %-26s| %-37s\n", "Период выписки", dateFormat.format(startDate) + " - " + dateFormat.format(new Date())));
 			}
-			if (period == 2) {
+			if (period == Period.YEAR) {
 				Date startDate = Date.from(LocalDate.now().minusYears(1).atStartOfDay(ZoneId.systemDefault()).toInstant());
 				bw.write(String.format(" %-26s| %-37s\n", "Период выписки", dateFormat.format(startDate) + " - " + dateFormat.format(new Date())));
 			}
-			if (period == 3)
+			if (period == Period.ALL)
 				bw.write(String.format(" %-26s| %-37s\n", "Период выписки", "За всё время"));
 			bw.write(String.format(" %-26s| %-37s\n", "Дата и время формирования", timeFormat.format(new Date().getTime())));
 			bw.write(String.format(" %-26s| %-37s\n", "Остаток", account.getBalance()));
