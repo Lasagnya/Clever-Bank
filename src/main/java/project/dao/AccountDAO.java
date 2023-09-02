@@ -1,5 +1,14 @@
 package project.dao;
 
+import com.itextpdf.text.*;
+import com.itextpdf.text.pdf.PdfWriter;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.PDPageContentStream;
+import org.apache.pdfbox.pdmodel.font.PDFont;
+import org.apache.pdfbox.pdmodel.font.PDType0Font;
+import org.apache.pdfbox.pdmodel.font.PDType1Font;
+import org.apache.pdfbox.pdmodel.font.Standard14Fonts;
 import project.models.*;
 
 import java.io.*;
@@ -134,39 +143,8 @@ public class AccountDAO {
 		}
 	}
 
-	public void excerpt(Account account, Period period) {		// 1 - месяц, 2 - год, 3 - весь период
-		List<Transaction> transactions = new ArrayList<>();
-		try {
-			String SQL = "select * from transaction" +
-					" where " +
-					"((sending_bank=1 and sending_account=?)" +
-					" or " +
-					"(receiving_bank=1 and receiving_account=?))";
-			if (period == Period.MONTH)
-				SQL = SQL + " and execution_time>now()-'1 month'::interval";
-			else if (period == Period.YEAR)
-				SQL = SQL + " and execution_time>now()-'1 year'::interval";
-			PreparedStatement preparedStatement = connection.prepareStatement(SQL);
-			preparedStatement.setInt(1, account.getId());
-			preparedStatement.setInt(2, account.getId());
-
-			ResultSet rs = preparedStatement.executeQuery();
-			while (rs.next()) {
-				Transaction transaction = new Transaction();
-				transaction.setId(rs.getInt("transaction_id"));
-				transaction.setTime(rs.getTimestamp("execution_time"));
-				transaction.setTypeOfTransaction(TypeOfTransaction.valueOf(rs.getString("type_of_transaction")));
-				transaction.setSendingBank(rs.getInt("sending_bank"));
-				transaction.setReceivingBank(rs.getInt("receiving_bank"));
-				transaction.setSendingAccount(rs.getInt("sending_account"));
-				transaction.setReceivingAccount(rs.getInt("receiving_account"));
-				transaction.setAmount(rs.getDouble("amount"));
-				transaction.setCurrency(Currency.valueOf(rs.getString("transaction_currency")));
-				transactions.add(transaction);
-			}
-		} catch (SQLException e) {
-			throw new RuntimeException(e);
-		}
+	public void excerpt(Account account, Period period) {
+		List<Transaction> transactions = getTransactions(account, period);
 
 		try {
 			Files.createDirectories(Path.of("excerpt"));
@@ -216,6 +194,80 @@ public class AccountDAO {
 		}
 	}
 
+	public void excerptInPDF(Account account, Period period) {
+		List<Transaction> transactions = getTransactions(account, period);
+
+		try {
+			Files.createDirectories(Path.of("excerpt"));
+			PDDocument document = new PDDocument();
+			PDPage page = new PDPage();
+			document.addPage(page);
+
+			PDPageContentStream contentStream = new PDPageContentStream(document, page);
+
+			PDFont font = PDType0Font.load(document, new File("fonts/CascadiaMono-SemiLight.ttf"));
+			contentStream.beginText();
+			contentStream.setFont(font, 12);
+			contentStream.setLeading(14.5f);
+			contentStream.newLineAtOffset(25, 750);
+			String title = "Выписка";
+			String output = String.format("%30s%30s", "#", "").replace("#", title);
+			contentStream.showText(output);
+			contentStream.newLine();
+			output = String.format("%28s%28s", "#", "").replace("#", "Clever-Bank");
+			contentStream.showText(output);
+			contentStream.newLine();
+			contentStream.showText(String.format(" %-26s| %-37s", "Клиент", UserDAO.getUser().getName()));
+			contentStream.newLine();
+			contentStream.showText(String.format(" %-26s| %-37s", "Счёт", account.getId()));
+			contentStream.newLine();
+			contentStream.showText(String.format(" %-26s| %-37s", "Валюта", account.getCurrency().toString()));
+			contentStream.newLine();
+			DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyy");
+			DateFormat timeFormat = new SimpleDateFormat("dd.MM.yyy, HH:mm");
+			contentStream.showText(String.format(" %-26s| %-37s", "Дата открытия", dateFormat.format(account.getOpening().getTime())));
+			contentStream.newLine();
+			if (period == Period.MONTH) {
+				Date startDate = Date.from(LocalDate.now().minusMonths(1).atStartOfDay(ZoneId.systemDefault()).toInstant());
+				contentStream.showText(String.format(" %-26s| %-37s", "Период выписки", dateFormat.format(startDate) + " - " + dateFormat.format(new Date())));
+			}
+			if (period == Period.YEAR) {
+				Date startDate = Date.from(LocalDate.now().minusYears(1).atStartOfDay(ZoneId.systemDefault()).toInstant());
+				contentStream.showText(String.format(" %-26s| %-37s", "Период выписки", dateFormat.format(startDate) + " - " + dateFormat.format(new Date())));
+			}
+			if (period == Period.ALL)
+				contentStream.showText(String.format(" %-26s| %-37s", "Период выписки", "За всё время"));
+			contentStream.newLine();
+			contentStream.showText(String.format(" %-26s| %-37s", "Дата и время формирования", timeFormat.format(new Date().getTime())));
+			contentStream.newLine();
+			contentStream.showText(String.format(" %-26s| %-37s", "Остаток", account.getBalance()));
+			contentStream.newLine();
+			contentStream.showText(String.format(" %-12s| %-33s | %-15s", "   Дата", "           Примечание", "    Сумма"));
+			contentStream.newLine();
+			contentStream.showText(String.format("%66s", "").replace(" ", "-"));
+			contentStream.newLine();
+			for (Transaction transaction : transactions) {
+				String amount = transaction.getAmount() + " " + transaction.getCurrency().toString();
+				if (transaction.getTypeOfTransaction().equals(TypeOfTransaction.WITHDRAWAL) ||
+						(transaction.getTypeOfTransaction().equals(TypeOfTransaction.TRANSFER) &&
+								(transaction.getReceivingAccount() != account.getId() || transaction.getReceivingBank() != account.getBank()))) {
+					amount = "-" + amount;
+				}
+				contentStream.showText(String.format(" %-12s| %-33s | %-15s",
+						dateFormat.format(transaction.getTime().getTime()),
+						transaction.getTypeOfTransaction().getTitle(),
+						amount));
+			}
+			contentStream.endText();
+			contentStream.close();
+
+			document.save(String.format("excerpt/excerpt%d.pdf", account.getId()));
+			document.close();
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
 	private List<Account> makeList(ResultSet rs) {
 		List<Account> accounts = new ArrayList<>();
 		try {
@@ -233,5 +285,41 @@ public class AccountDAO {
 		} catch (SQLException e) {
 			throw new RuntimeException(e);
 		}
+	}
+
+	private List<Transaction> getTransactions(Account account, Period period) {
+		List<Transaction> transactions = new ArrayList<>();
+		try {
+			String SQL = "select * from transaction" +
+					" where " +
+					"((sending_bank=1 and sending_account=?)" +
+					" or " +
+					"(receiving_bank=1 and receiving_account=?))";
+			if (period == Period.MONTH)
+				SQL = SQL + " and execution_time>now()-'1 month'::interval";
+			else if (period == Period.YEAR)
+				SQL = SQL + " and execution_time>now()-'1 year'::interval";
+			PreparedStatement preparedStatement = connection.prepareStatement(SQL);
+			preparedStatement.setInt(1, account.getId());
+			preparedStatement.setInt(2, account.getId());
+
+			ResultSet rs = preparedStatement.executeQuery();
+			while (rs.next()) {
+				Transaction transaction = new Transaction();
+				transaction.setId(rs.getInt("transaction_id"));
+				transaction.setTime(rs.getTimestamp("execution_time"));
+				transaction.setTypeOfTransaction(TypeOfTransaction.valueOf(rs.getString("type_of_transaction")));
+				transaction.setSendingBank(rs.getInt("sending_bank"));
+				transaction.setReceivingBank(rs.getInt("receiving_bank"));
+				transaction.setSendingAccount(rs.getInt("sending_account"));
+				transaction.setReceivingAccount(rs.getInt("receiving_account"));
+				transaction.setAmount(rs.getDouble("amount"));
+				transaction.setCurrency(Currency.valueOf(rs.getString("transaction_currency")));
+				transactions.add(transaction);
+			}
+		} catch (SQLException e) {
+			throw new RuntimeException(e);
+		}
+		return transactions;
 	}
 }
