@@ -17,7 +17,8 @@ create table account(
                         opening date not null ,
                         balance numeric(15, 2) default 0.0,
                         account_bank_id integer references bank(bank_id) on delete cascade,
-                        account_user_id integer references "user"(user_id) on delete cascade
+                        account_user_id integer references "user"(user_id) on delete cascade,
+                        account_is_percents bool default false
 );
 
 create table transaction(

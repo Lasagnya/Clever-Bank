@@ -2,11 +2,19 @@ package project.controllers;
 
 import project.dao.AccountDAO;
 import project.dao.UserDAO;
+import project.functions.ChargingOfPercents;
+import project.functions.IsPercentsNeeded;
 import project.functions.SwitchInputMethods;
 import project.models.*;
 
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.Scanner;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class Runner {
 	private static final AccountDAO accountDAO = new AccountDAO();
@@ -14,6 +22,14 @@ public class Runner {
 	private static final SwitchInputMethods sim = new SwitchInputMethods();
 
 	public static void main(String[] args) {
+		long checkPeriod = ChronoUnit.MINUTES.getDuration().toMillis()/ (long)2;
+		ScheduledExecutorService scheduler1 = Executors.newScheduledThreadPool(1);
+		scheduler1.scheduleAtFixedRate(new IsPercentsNeeded(), 0, checkPeriod, TimeUnit.MILLISECONDS);
+		long chargingPeriod = ChronoUnit.MONTHS.getDuration().toMillis();
+		LocalDateTime month = LocalDateTime.now().plusMonths(1).withDayOfMonth(1).with(LocalTime.MIN);
+		long chargingDelay = ChronoUnit.MILLIS.between(LocalDateTime.now(), month);
+		ScheduledExecutorService scheduler2 = Executors.newScheduledThreadPool(1);
+		scheduler2.scheduleAtFixedRate(new ChargingOfPercents(), chargingDelay, chargingPeriod, TimeUnit.MILLISECONDS);
 		run();
 	}
 

@@ -98,6 +98,7 @@ public class AccountDAO {
 				account.setBalance(rs.getDouble("balance"));
 				account.setBank(rs.getInt("account_bank_id"));
 				account.setUser(rs.getInt("account_user_id"));
+				account.setPercents(rs.getBoolean("account_is_percents"));
 				return Optional.of(account);
 			}
 			else return Optional.empty();
@@ -275,6 +276,7 @@ public class AccountDAO {
 				account.setBalance(rs.getInt("balance"));
 				account.setBank(rs.getInt("account_bank_id"));
 				account.setUser(rs.getInt("account_user_id"));
+				account.setPercents(rs.getBoolean("account_is_percents"));
 				accounts.add(account);
 			}
 			return accounts;

@@ -19,4 +19,6 @@ public class Account {
 	private int bank;
 
 	private int user;
+
+	private boolean isPercents;
 }
