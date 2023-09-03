@@ -30,7 +30,11 @@ public class Runner {
 		long chargingDelay = ChronoUnit.MILLIS.between(LocalDateTime.now(), month);
 		ScheduledExecutorService scheduler2 = Executors.newScheduledThreadPool(1);
 		scheduler2.scheduleAtFixedRate(new ChargingOfPercents(), chargingDelay, chargingPeriod, TimeUnit.MILLISECONDS);
+
 		run();
+
+		scheduler1.shutdown();
+		scheduler2.shutdown();
 	}
 
 	public static void run(){
