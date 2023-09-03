@@ -86,7 +86,7 @@ public class Runner {
 					double amount = scanner.nextDouble();
 
 					Transaction transaction = new Transaction(new Date(), TypeOfTransaction.PAYIN, 1, receivingBank, 1, receivingAccount, amount, Currency.BYN);
-					accountDAO.transfer(transaction);
+					accountDAO.payIn(transaction);
 					break;
 				}
 
