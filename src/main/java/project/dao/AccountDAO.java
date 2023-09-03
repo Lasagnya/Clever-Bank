@@ -20,6 +20,9 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class AccountDAO {
 	private static final String DRIVER;
@@ -29,6 +32,8 @@ public class AccountDAO {
 	private static final Connection connection;
 	private static final Properties properties;
 	private static final TransactionDAO transactionDAO = new TransactionDAO();
+	private final ConcurrentMap<Integer, ReentrantLock> accountLocks = new ConcurrentHashMap<>();
+	private final ConcurrentMap<Integer, ReentrantLock> bankLocks = new ConcurrentHashMap<>();
 
 	static {
 		try {
@@ -81,8 +86,44 @@ public class AccountDAO {
 	}
 
 	public void transfer(Transaction transaction) {
-		payIn(transaction);
-		withdrawal(transaction);
+		if (transaction.getReceivingBank() != 1) {
+			ReentrantLock accountLock = accountLocks.computeIfAbsent(transaction.getSendingAccount(), k -> new ReentrantLock());
+			ReentrantLock bankLock = bankLocks.computeIfAbsent(transaction.getReceivingBank(), k -> new ReentrantLock());
+			takeLocks(accountLock, bankLock);
+			try {
+				payIn(transaction);
+				withdrawal(transaction);
+			} finally {
+				accountLock.unlock();
+				bankLock.unlock();
+			}
+		} else {
+			payIn(transaction);
+			withdrawal(transaction);
+		}
+	}
+
+	private void takeLocks(ReentrantLock lock1, ReentrantLock lock2) {
+		boolean firstLockTaken = false;
+		boolean secondLockTaken = false;
+		while (true) {
+			try {
+				firstLockTaken = lock1.tryLock();
+				secondLockTaken = lock2.tryLock();
+			} finally {
+				if (firstLockTaken && secondLockTaken)
+					return;
+				if (firstLockTaken)
+					lock1.unlock();
+				if (secondLockTaken)
+					lock2.unlock();
+			}
+			try {
+				Thread.sleep(1);
+			} catch (InterruptedException e) {
+				throw new RuntimeException(e);
+			}
+		}
 	}
 
 	public Optional<Account> findById(int id) {
@@ -254,6 +295,7 @@ public class AccountDAO {
 						dateFormat.format(transaction.getTime().getTime()),
 						transaction.getTypeOfTransaction().getTitle(),
 						amount));
+				contentStream.newLine();
 			}
 			contentStream.endText();
 			contentStream.close();
