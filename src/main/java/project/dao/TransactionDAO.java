@@ -48,7 +48,10 @@ public class TransactionDAO {
 		}
 	}
 
-
+	/**
+	 * Сохранение транзакции в базу данных
+	 * @param transaction транзакция для сохранения
+	 */
 	public void saveTransaction(Transaction transaction) {
 		try {
 			PreparedStatement preparedStatement1 = connection.prepareStatement(
@@ -69,6 +72,10 @@ public class TransactionDAO {
 		}
 	}
 
+	/**
+	 * Создание чека по транзакции
+	 * @param transaction транзакция, по которой создаётся чек
+	 */
 	private void makeCheck(Transaction transaction) {
 		int id;
 		String sendingBankName = "";

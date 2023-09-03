@@ -50,10 +50,19 @@ public class UserDAO {
 		}
 	}
 
+	/**
+	 * Определение локального пользователя
+	 * @param user пользователь с аутентификационными данными
+	 */
 	public static void defineUser(User user) {
 		UserDAO.user = user;
 	}
 
+	/**
+	 * Поиск пользователя в базе данных по имени
+	 * @param name имя, по которому ищется пользователь
+	 * @return найденный пользователь или empty, если не найден
+	 */
 	public Optional<User> findByName(String name) {
 		User user = new User();
 		try {
@@ -73,6 +82,10 @@ public class UserDAO {
 		}
 	}
 
+	/**
+	 * Сохранение нового пользователя в базу данных
+	 * @param user пользователь для сохранения
+	 */
 	public void save(User user) {
 		try {
 			PreparedStatement preparedStatement = connection.prepareStatement("insert into public.user(user_name, user_bank_id, user_password) VALUES (?, ?, ?)");
@@ -85,6 +98,10 @@ public class UserDAO {
 		}
 	}
 
+	/**
+	 * Получение шифрованного пароля
+	 * @return строка с шифрованным паролем
+	 */
 	private String getPasswordHash() {
 		Scanner scanner = new Scanner(System.in);
 		byte[] password;
@@ -105,6 +122,11 @@ public class UserDAO {
 		return hash;
 	}
 
+	/**
+	 * В методе происходит аутентификация пользователя. Человек вводит имя пользователя,
+	 * и, если такого не существует, ему предлагается создать нового с таким именем или ввести ещё раз.
+	 * Далее происходит ввод пароля.
+	 */
 	public void authentication() {
 		Scanner scanner = new Scanner(System.in);
 		User user;
@@ -142,6 +164,10 @@ public class UserDAO {
 		defineUser(user);
 	}
 
+	/**
+	 * Обновление записи о пользователе в базе данных.
+	 * @param updatedUser обновлённый пользователь
+	 */
 	public void update(User updatedUser) {
 		try {
 			PreparedStatement preparedStatement = connection.prepareStatement("update public.user set user_name=?, user_password=?, user_bank_id=? where user_id=?");
@@ -155,12 +181,18 @@ public class UserDAO {
 		}
 	}
 
+	/**
+	 * Изменяет пароль у локального пользователя и обновляет базу данных
+	 */
 	public void changePassword() {
 		user.setPassword(getPasswordHash());
 		update(user);
 		System.out.println("Пароль изменён!");
 	}
 
+	/**
+	 * Обновляет имя у локального пользователя и обновляет базу данных
+	 */
 	public void changeUsername() {
 		Scanner scanner = new Scanner(System.in);
 		System.out.println("Введите новое имя пользователя:");
