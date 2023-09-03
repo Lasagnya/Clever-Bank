@@ -70,4 +70,15 @@ public class BankDAO {
 			throw new RuntimeException(e);
 		}
 	}
+
+	public void update(Bank updatedBank) {
+		try {
+			PreparedStatement preparedStatement = connection.prepareStatement("update bank set bank_name=? where bank_id=?");
+			preparedStatement.setString(1, updatedBank.getName());
+			preparedStatement.setInt(2, updatedBank.getId());
+			preparedStatement.executeUpdate();
+		} catch (SQLException e) {
+			throw new RuntimeException(e);
+		}
+	}
 }
