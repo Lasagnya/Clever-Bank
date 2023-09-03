@@ -33,8 +33,3 @@ create table transaction(
                             transaction_currency varchar(3) not null
 );
 alter table transaction add constraint transaction_unique unique (execution_time, type_of_transaction, sending_bank, receiving_bank, sending_account, receiving_account, amount);
-
-create table user_bank(
-                          user_id integer references "user"(user_id),
-                          bank_id integer references bank(bank_id)
-);
