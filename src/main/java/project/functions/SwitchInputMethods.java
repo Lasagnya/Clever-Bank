@@ -92,6 +92,4 @@ public class SwitchInputMethods {
 		}
 		return file;
 	}
-
-
 }

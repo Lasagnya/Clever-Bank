@@ -85,6 +85,26 @@ public class UserDAO {
 		}
 	}
 
+	private String getPasswordHash() {
+		Scanner scanner = new Scanner(System.in);
+		byte[] password;
+		byte[] password2;
+		do {
+			System.out.println("Введите пароль:");
+			password = scanner.next().getBytes(StandardCharsets.UTF_8);
+			System.out.println("Введите пароль ещё раз:");
+			password2 = scanner.next().getBytes(StandardCharsets.UTF_8);
+			if (Arrays.equals(password2, password)) {
+				break;
+			} else System.out.println("Пароли не совпадают, попробуйте ещё раз!");
+		} while (true);
+		Argon2 argon2 = Argon2Factory.create(Argon2Factory.Argon2Types.ARGON2id, 16, 32);
+		String hash = argon2.hash(22, 65536, 1, password);
+		argon2.wipeArray(password);
+		argon2.wipeArray(password2);
+		return hash;
+	}
+
 	public void authentication() {
 		Scanner scanner = new Scanner(System.in);
 		User user;
@@ -101,23 +121,8 @@ public class UserDAO {
 			if (scanner.nextInt() == 1) {
 				user = new User();
 				user.setName(name);
-				byte[] password;
-				byte[] password2;
-				do {
-					System.out.println("Введите пароль:");
-					password = scanner.next().getBytes(StandardCharsets.UTF_8);
-					System.out.println("Введите пароль ещё раз:");
-					password2 = scanner.next().getBytes(StandardCharsets.UTF_8);
-					if (Arrays.equals(password2, password)) {
-						break;
-					} else System.out.println("Пароли не совпадают, попробуйте ещё раз!");
-				} while (true);
-				Argon2 argon2 = Argon2Factory.create(Argon2Factory.Argon2Types.ARGON2id, 16, 32);
-				String hash = argon2.hash(22, 65536, 1, password);
-				user.setPassword(hash);
+				user.setPassword(getPasswordHash());
 				save(user);
-				argon2.wipeArray(password);
-				argon2.wipeArray(password2);
 			}
 
 			System.out.println("Необходимо войти в аккаунт\n" +
@@ -135,5 +140,33 @@ public class UserDAO {
 		}
 		argon2.wipeArray(password);
 		defineUser(user);
+	}
+
+	public void update(User updatedUser) {
+		try {
+			PreparedStatement preparedStatement = connection.prepareStatement("update public.user set user_name=?, user_password=?, user_bank_id=? where user_id=?");
+			preparedStatement.setString(1, updatedUser.getName());
+			preparedStatement.setString(2, updatedUser.getPassword());
+			preparedStatement.setInt(3, updatedUser.getBank());
+			preparedStatement.setInt(4, updatedUser.getId());
+			preparedStatement.executeUpdate();
+		} catch (SQLException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	public void changePassword() {
+		user.setPassword(getPasswordHash());
+		update(user);
+		System.out.println("Пароль изменён!");
+	}
+
+	public void changeUsername() {
+		Scanner scanner = new Scanner(System.in);
+		System.out.println("Введите новое имя пользователя:");
+		String name = scanner.next();
+		user.setName(name);
+		update(user);
+		System.out.println("Имя изменено на " + name + ".");
 	}
 }

@@ -124,7 +124,16 @@ public class Runner {
 				}
 
 				case 6: {
-
+					System.out.println("""
+								Вы хотите изменить пароль или имя пользователя?
+								1: пароль
+								2: имя""");
+					int value = sim.getFileFormat();
+					if (value == 1)
+						userDAO.changePassword();
+					else if (value == 2)
+						userDAO.changeUsername();
+					break;
 				}
 
 				case 0:
