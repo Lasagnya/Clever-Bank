@@ -16,6 +16,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+/**
+ *  Главный исполнительный файл с интерфейсом
+ */
+
 public class Runner {
 	private static final AccountDAO accountDAO = new AccountDAO();
 	private static final UserDAO userDAO = new UserDAO();

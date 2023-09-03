@@ -24,6 +24,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.locks.ReentrantLock;
 
+/**
+ *  Класс методов для сущности Account. Взаимодействует
+ *  с таблицей account.
+ */
+
 public class AccountDAO {
 	private static final String DRIVER;
 	private static final String URL;
@@ -32,7 +37,9 @@ public class AccountDAO {
 	private static final Connection connection;
 	private static final Properties properties;
 	private static final TransactionDAO transactionDAO = new TransactionDAO();
+	/** мэп, сопоставляющий id аккаунта с ReentrantLock */
 	private final ConcurrentMap<Integer, ReentrantLock> accountLocks = new ConcurrentHashMap<>();
+	/** мэп, сопоставляющий id банка с ReentrantLock */
 	private final ConcurrentMap<Integer, ReentrantLock> bankLocks = new ConcurrentHashMap<>();
 
 	static {
@@ -61,6 +68,10 @@ public class AccountDAO {
 		}
 	}
 
+	/**
+	 * Пополнение счёта
+	 * @param transaction исполняемая транзация
+	 */
 	public void payIn(Transaction transaction) {
 		try {
 			PreparedStatement preparedStatement = connection.prepareStatement("update account set balance=balance+? where account_id=?");
@@ -73,6 +84,10 @@ public class AccountDAO {
 		}
 	}
 
+	/**
+	 * Снятие средств со счёта
+	 * @param transaction исполняемая транзакия
+	 */
 	public void withdrawal(Transaction transaction) {
 		try {
 			PreparedStatement preparedStatement = connection.prepareStatement("update account set balance=balance-? where account_id=?");
@@ -85,6 +100,10 @@ public class AccountDAO {
 		}
 	}
 
+	/**
+	 * Перевод средств между счетами
+	 * @param transaction исполняемая транзакия
+	 */
 	public void transfer(Transaction transaction) {
 		if (transaction.getReceivingBank() != 1) {
 			ReentrantLock accountLock = accountLocks.computeIfAbsent(transaction.getSendingAccount(), k -> new ReentrantLock());
@@ -103,6 +122,11 @@ public class AccountDAO {
 		}
 	}
 
+	/**
+	 * Взятие двух ReentrantLock во избежание блокировки
+	 * @param lock1
+	 * @param lock2
+	 */
 	private void takeLocks(ReentrantLock lock1, ReentrantLock lock2) {
 		boolean firstLockTaken = false;
 		boolean secondLockTaken = false;
@@ -126,6 +150,11 @@ public class AccountDAO {
 		}
 	}
 
+	/**
+	 * Получение сущности счёт
+	 * @param id id счёта
+	 * @return возвращает счёт, если он найден по id, иначе empty
+	 */
 	public Optional<Account> findById(int id) {
 		Account account = new Account();
 		try {
@@ -148,6 +177,11 @@ public class AccountDAO {
 		}
 	}
 
+	/**
+	 * Поиск всех счетов, принадлежащих банку с id
+	 * @param id id банка-владельца
+	 * @return возвращает список найденых счетов
+	 */
 	public List<Account> findByBank(int id) {
 		try {
 			PreparedStatement preparedStatement = connection.prepareStatement("select * from account where account_bank_id=?");
@@ -159,6 +193,12 @@ public class AccountDAO {
 		}
 	}
 
+	/**
+	 * Проверяет, приндлежит ли счёт с id accountId банку с id bankId
+	 * @param bankId id банка для выяснения принадлежности
+	 * @param accountId id счёта для выяснения принадлежности
+	 * @return true, если принадлежит; false, если не принадлежит
+	 */
 	public boolean thisBank(int bankId, int accountId) {
 		try {
 			PreparedStatement preparedStatement = connection.prepareStatement("select * from account where account_bank_id=? and account_id=?");
@@ -170,6 +210,11 @@ public class AccountDAO {
 		}
 	}
 
+	/**
+	 * Поиск счетов по их принадлежности пользователю с id
+	 * @param id id пользователя
+	 * @return список найденных счетов
+	 */
 	public List<Account> findByUser(int id) {
 		try {
 			PreparedStatement preparedStatement = connection.prepareStatement("select * from account where account_user_id=? and account_bank_id=1");
@@ -181,6 +226,10 @@ public class AccountDAO {
 		}
 	}
 
+	/**
+	 * Сохранение нового счёта в базу данных
+	 * @param account новый счёт
+	 */
 	public void save(Account account) {
 		try {
 			PreparedStatement preparedStatement = connection.prepareStatement("insert into account(currency, opening, account_bank_id, account_user_id) VALUES (?, ?, ?, ?)");
@@ -194,6 +243,11 @@ public class AccountDAO {
 		}
 	}
 
+	/**
+	 * Создание выписки по счёту в txt файл
+	 * @param account по этому счёту осуществляется выписка
+	 * @param period выписка по этому периоду
+	 */
 	public void excerpt(Account account, Period period) {
 		List<Transaction> transactions = getTransactions(account, period);
 
@@ -245,6 +299,11 @@ public class AccountDAO {
 		}
 	}
 
+	/**
+	 * Создание выписки по счёту в pdf файл
+	 * @param account по этому счёту осуществляется выписка
+	 * @param period выписка по этому периоду
+	 */
 	public void excerptInPDF(Account account, Period period) {
 		List<Transaction> transactions = getTransactions(account, period);
 
@@ -336,6 +395,11 @@ public class AccountDAO {
 		}
 	}
 
+	/**
+	 * Создание списка счетов по выводу базы данных
+	 * @param rs переданный ResultSet
+	 * @return список полученных счетов
+	 */
 	private List<Account> makeList(ResultSet rs) {
 		List<Account> accounts = new ArrayList<>();
 		try {
@@ -356,6 +420,12 @@ public class AccountDAO {
 		}
 	}
 
+	/**
+	 * Создание списка транзакций, связанных со счётом
+	 * @param account ищутся транзакии, связанные с этим счётом
+	 * @param period период, за который ищутся транзакции
+	 * @return список найденных транзакций
+	 */
 	private List<Transaction> getTransactions(Account account, Period period) {
 		List<Transaction> transactions = new ArrayList<>();
 		try {
