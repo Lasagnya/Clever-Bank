@@ -5,7 +5,6 @@ import project.dao.BankDAO;
 import project.dao.UserDAO;
 import project.models.Account;
 import project.models.Bank;
-import project.models.Currency;
 import project.models.Period;
 
 import java.io.BufferedReader;
