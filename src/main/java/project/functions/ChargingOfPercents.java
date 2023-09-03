@@ -1,7 +1,5 @@
 package project.functions;
 
-import project.dao.AccountDAO;
-
 import java.io.FileReader;
 import java.io.IOException;
 import java.sql.Connection;
@@ -17,7 +15,6 @@ public class ChargingOfPercents implements Runnable{
 	private static final String PASSWORD;
 	private static final Connection connection;
 	private static final Properties properties;
-	AccountDAO accountDAO = new AccountDAO();
 
 	static {
 		try {
