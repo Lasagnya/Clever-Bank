@@ -50,10 +50,19 @@ public class UserDAO {
 		}
 	}
 
+	/**
+	 * Определение локального пользователя
+	 * @param user пользователь с аутентификационными данными
+	 */
 	public static void defineUser(User user) {
 		UserDAO.user = user;
 	}
 
+	/**
+	 * Поиск пользователя в базе данных по имени
+	 * @param name имя, по которому ищется пользователь
+	 * @return найденный пользователь или empty, если не найден
+	 */
 	public Optional<User> findByName(String name) {
 		User user = new User();
 		try {
@@ -73,6 +82,10 @@ public class UserDAO {
 		}
 	}
 
+	/**
+	 * Сохранение нового пользователя в базу данных
+	 * @param user пользователь для сохранения
+	 */
 	public void save(User user) {
 		try {
 			PreparedStatement preparedStatement = connection.prepareStatement("insert into public.user(user_name, user_bank_id, user_password) VALUES (?, ?, ?)");
@@ -85,6 +98,35 @@ public class UserDAO {
 		}
 	}
 
+	/**
+	 * Получение шифрованного пароля
+	 * @return строка с шифрованным паролем
+	 */
+	private String getPasswordHash() {
+		Scanner scanner = new Scanner(System.in);
+		byte[] password;
+		byte[] password2;
+		do {
+			System.out.println("Введите пароль:");
+			password = scanner.next().getBytes(StandardCharsets.UTF_8);
+			System.out.println("Введите пароль ещё раз:");
+			password2 = scanner.next().getBytes(StandardCharsets.UTF_8);
+			if (Arrays.equals(password2, password)) {
+				break;
+			} else System.out.println("Пароли не совпадают, попробуйте ещё раз!");
+		} while (true);
+		Argon2 argon2 = Argon2Factory.create(Argon2Factory.Argon2Types.ARGON2id, 16, 32);
+		String hash = argon2.hash(22, 65536, 1, password);
+		argon2.wipeArray(password);
+		argon2.wipeArray(password2);
+		return hash;
+	}
+
+	/**
+	 * В методе происходит аутентификация пользователя. Человек вводит имя пользователя,
+	 * и, если такого не существует, ему предлагается создать нового с таким именем или ввести ещё раз.
+	 * Далее происходит ввод пароля.
+	 */
 	public void authentication() {
 		Scanner scanner = new Scanner(System.in);
 		User user;
@@ -101,23 +143,8 @@ public class UserDAO {
 			if (scanner.nextInt() == 1) {
 				user = new User();
 				user.setName(name);
-				byte[] password;
-				byte[] password2;
-				do {
-					System.out.println("Введите пароль:");
-					password = scanner.next().getBytes(StandardCharsets.UTF_8);
-					System.out.println("Введите пароль ещё раз:");
-					password2 = scanner.next().getBytes(StandardCharsets.UTF_8);
-					if (Arrays.equals(password2, password)) {
-						break;
-					} else System.out.println("Пароли не совпадают, попробуйте ещё раз!");
-				} while (true);
-				Argon2 argon2 = Argon2Factory.create(Argon2Factory.Argon2Types.ARGON2id, 16, 32);
-				String hash = argon2.hash(22, 65536, 1, password);
-				user.setPassword(hash);
+				user.setPassword(getPasswordHash());
 				save(user);
-				argon2.wipeArray(password);
-				argon2.wipeArray(password2);
 			}
 
 			System.out.println("Необходимо войти в аккаунт\n" +
@@ -135,5 +162,43 @@ public class UserDAO {
 		}
 		argon2.wipeArray(password);
 		defineUser(user);
+	}
+
+	/**
+	 * Обновление записи о пользователе в базе данных.
+	 * @param updatedUser обновлённый пользователь
+	 */
+	public void update(User updatedUser) {
+		try {
+			PreparedStatement preparedStatement = connection.prepareStatement("update public.user set user_name=?, user_password=?, user_bank_id=? where user_id=?");
+			preparedStatement.setString(1, updatedUser.getName());
+			preparedStatement.setString(2, updatedUser.getPassword());
+			preparedStatement.setInt(3, updatedUser.getBank());
+			preparedStatement.setInt(4, updatedUser.getId());
+			preparedStatement.executeUpdate();
+		} catch (SQLException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	/**
+	 * Изменяет пароль у локального пользователя и обновляет базу данных
+	 */
+	public void changePassword() {
+		user.setPassword(getPasswordHash());
+		update(user);
+		System.out.println("Пароль изменён!");
+	}
+
+	/**
+	 * Обновляет имя у локального пользователя и обновляет базу данных
+	 */
+	public void changeUsername() {
+		Scanner scanner = new Scanner(System.in);
+		System.out.println("Введите новое имя пользователя:");
+		String name = scanner.next();
+		user.setName(name);
+		update(user);
+		System.out.println("Имя изменено на " + name + ".");
 	}
 }
