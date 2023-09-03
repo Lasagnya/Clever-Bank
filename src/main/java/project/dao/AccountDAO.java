@@ -284,7 +284,22 @@ public class AccountDAO {
 			contentStream.newLine();
 			contentStream.showText(String.format("%66s", "").replace(" ", "-"));
 			contentStream.newLine();
+			int i = 1;
 			for (Transaction transaction : transactions) {
+				if (i == 41) {
+					contentStream.endText();
+					contentStream.close();
+					page = new PDPage();
+					document.addPage(page);
+					contentStream = new PDPageContentStream(document, page);
+					font = PDType0Font.load(document, new File("fonts/CascadiaMono-SemiLight.ttf"));
+					contentStream.beginText();
+					contentStream.setFont(font, 12);
+					contentStream.setLeading(14.5f);
+					contentStream.newLineAtOffset(25, 750);
+					i = 1;
+				}
+
 				String amount = transaction.getAmount() + " " + transaction.getCurrency().toString();
 				if (transaction.getTypeOfTransaction().equals(TypeOfTransaction.WITHDRAWAL) ||
 						(transaction.getTypeOfTransaction().equals(TypeOfTransaction.TRANSFER) &&
@@ -296,6 +311,7 @@ public class AccountDAO {
 						transaction.getTypeOfTransaction().getTitle(),
 						amount));
 				contentStream.newLine();
+				i++;
 			}
 			contentStream.endText();
 			contentStream.close();
@@ -334,7 +350,9 @@ public class AccountDAO {
 					" where " +
 					"((sending_bank=1 and sending_account=?)" +
 					" or " +
-					"(receiving_bank=1 and receiving_account=?))";
+					"(receiving_bank=1 and receiving_account=?))" +
+					" order by " +
+					"execution_time desc";
 			if (period == Period.MONTH)
 				SQL = SQL + " and execution_time>now()-'1 month'::interval";
 			else if (period == Period.YEAR)
