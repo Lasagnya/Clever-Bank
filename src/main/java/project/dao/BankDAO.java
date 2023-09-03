@@ -60,4 +60,14 @@ public class BankDAO {
 		}
 		return banks;
 	}
+
+	public void delete(int id) {
+		try {
+			PreparedStatement preparedStatement = connection.prepareStatement("delete from bank where bank_id=?");
+			preparedStatement.setInt(1, id);
+			preparedStatement.executeUpdate();
+		} catch (SQLException e) {
+			throw new RuntimeException(e);
+		}
+	}
 }
