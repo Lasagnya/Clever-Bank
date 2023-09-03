@@ -81,4 +81,14 @@ public class BankDAO {
 			throw new RuntimeException(e);
 		}
 	}
+
+	public void save(Bank bank) {
+		try {
+			PreparedStatement preparedStatement = connection.prepareStatement("insert into bank(bank_name) values(?)");
+			preparedStatement.setString(1, bank.getName());
+			preparedStatement.executeUpdate();
+		} catch (SQLException e) {
+			throw new RuntimeException(e);
+		}
+	}
 }
