@@ -52,6 +52,8 @@ public class Runner {
 							2: снять деньги со счёта
 							3: положить деньги на счёт
 							4: сформировать выписку по счёту
+							5: создать новый счёт
+							6: изменить данные аутентификации
 							0: выйти""");
 
 			switch (scanner.nextInt()) {
@@ -113,6 +115,16 @@ public class Runner {
 					else if (file == 2)
 						accountDAO.excerptInPDF(account, period);
 					break;
+				}
+
+				case 5: {
+					accountDAO.save(new Account(Currency.BYN, new Date(), 1, UserDAO.getUser().getId()));
+					System.out.println("Счёт создан!");
+					break;
+				}
+
+				case 6: {
+
 				}
 
 				case 0:

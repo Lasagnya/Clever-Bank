@@ -181,6 +181,19 @@ public class AccountDAO {
 		}
 	}
 
+	public void save(Account account) {
+		try {
+			PreparedStatement preparedStatement = connection.prepareStatement("insert into account(currency, opening, account_bank_id, account_user_id) VALUES (?, ?, ?, ?)");
+			preparedStatement.setString(1, account.getCurrency().toString());
+			preparedStatement.setDate(2, new java.sql.Date(account.getOpening().getTime()));
+			preparedStatement.setInt(3, account.getBank());
+			preparedStatement.setInt(4, account.getUser());
+			preparedStatement.executeUpdate();
+		} catch (SQLException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
 	public void excerpt(Account account, Period period) {
 		List<Transaction> transactions = getTransactions(account, period);
 
