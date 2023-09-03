@@ -15,11 +15,19 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Scanner;
 
+/**
+ * Класс с функциями для ввода значений из интерфейса
+ */
+
 public class SwitchInputMethods {
 	private static final AccountDAO accountDAO = new AccountDAO();
 	private static final BankDAO bankDAO = new BankDAO();
 	Scanner scanner = new Scanner(System.in);
 
+	/**
+	 * Получение банка-получателя
+	 * @return введённый id банка
+	 */
 	public int getReceivingBank() {
 		List<Bank> banks = bankDAO.findAll();
 		for (Bank bank : banks)
@@ -27,6 +35,11 @@ public class SwitchInputMethods {
 		return scanner.nextInt();
 	}
 
+	/**
+	 * Получение аккаунта-получателя с проверкой его принадлежности выбранному банку
+	 * @param receivingBank банк-получатель
+	 * @return введённый id счёта
+	 */
 	public int getReceivingAccount(int receivingBank) {
 		int receivingAccount = scanner.nextInt();
 		while (!accountDAO.thisBank(receivingBank, receivingAccount)) {
@@ -36,6 +49,10 @@ public class SwitchInputMethods {
 		return receivingAccount;
 	}
 
+	/**
+	 * Получение аккаунта-отправителя
+	 * @return введённый id аккаунта
+	 */
 	public Account getSendingAccount() {
 		StreamTokenizer st = new StreamTokenizer(new BufferedReader(new InputStreamReader(System.in)));
 		List<Account> accounts = accountDAO.findByUser(UserDAO.getUser().getId());
@@ -56,6 +73,11 @@ public class SwitchInputMethods {
 		}
 	}
 
+	/**
+	 * Получение суммы транзакции с проверкой на доступность средств на счёте-отправителе
+	 * @param sendingAccount счёт-отправитель
+	 * @return сумма транзакции
+	 */
 	public double getAmount(Account sendingAccount) {
 		double amount = scanner.nextDouble();
 		double balance = sendingAccount.getBalance();
@@ -66,6 +88,10 @@ public class SwitchInputMethods {
 		return amount;
 	}
 
+	/**
+	 * Получение периода выписки
+	 * @return период выписки
+	 */
 	public Period getPeriod() {
 		int value = scanner.nextInt();
 		while(true) {
@@ -83,6 +109,10 @@ public class SwitchInputMethods {
 		}
 	}
 
+	/**
+	 * Получение формата файла для выписки. Но, в целом, можно использовать для любого бинарного ввода
+	 * @return 1 или 2 в зависимости от того, что пользователь ввёл
+	 */
 	public int getFileFormat() {
 		int file = scanner.nextInt();
 		while ((file != 1) && (file != 2)) {

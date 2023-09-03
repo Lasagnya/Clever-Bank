@@ -12,6 +12,10 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Properties;
 
+/**
+ * Класс для проверки потребности начисления процентов
+ */
+
 public class IsPercentsNeeded implements Runnable {
 	private static final String DRIVER;
 	private static final String URL;

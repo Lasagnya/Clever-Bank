@@ -8,6 +8,10 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.Properties;
 
+/**
+ * Класс для начисления процентов на счёт
+ */
+
 public class ChargingOfPercents implements Runnable{
 	private static final String DRIVER;
 	private static final String URL;
@@ -41,6 +45,7 @@ public class ChargingOfPercents implements Runnable{
 			throw new RuntimeException(e);
 		}
 	}
+
 
 	@Override
 	public void run() {
